@@ -2508,7 +2508,12 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 
 /// Built-in configuration for the "Soporte SG" custom client.
 fn apply_soporte_sg_config() {
-    *config::APP_NAME.write().unwrap() = "Soporte SG".to_owned();
+    // macOS keeps "RustDesk" because the service/installer code expects
+    // /Applications/<APP_NAME>.app to match the bundle name.
+    #[cfg(not(target_os = "macos"))]
+    {
+        *config::APP_NAME.write().unwrap() = "Soporte SG".to_owned();
+    }
     {
         let mut o = config::OVERWRITE_SETTINGS.write().unwrap();
         o.insert(
