@@ -2539,11 +2539,6 @@ fn apply_soporte_sg_config() {
         ] {
             d.insert(k.to_owned(), "Y".to_owned());
         }
-        d.insert(
-            keys::OPTION_VERIFICATION_METHOD.to_owned(),
-            "use-permanent-password".to_owned(),
-        );
-        d.insert(keys::OPTION_APPROVE_MODE.to_owned(), "password".to_owned());
     }
     // Preset permanent password (plain storage, no salt), injected at build time
     // from the SOPORTE_SG_PASSWORD secret so it is never stored in the repository.
