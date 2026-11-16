@@ -1234,7 +1234,8 @@ pub fn is_rustdesk() -> bool {
 
 #[inline]
 pub fn get_uri_prefix() -> String {
-    format!("{}://", get_app_name().to_lowercase())
+    // URI schemes cannot contain spaces ("Soporte SG" -> "soportesg").
+    format!("{}://", get_app_name().to_lowercase().replace(' ', ""))
 }
 
 #[cfg(target_os = "macos")]
@@ -2509,8 +2510,10 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 /// Built-in configuration for the "Soporte SG" custom client.
 fn apply_soporte_sg_config() {
     // macOS keeps "RustDesk" because the service/installer code expects
-    // /Applications/<APP_NAME>.app to match the bundle name.
-    #[cfg(not(target_os = "macos"))]
+    // /Applications/<APP_NAME>.app to match the bundle name. Android/iOS keep it
+    // so the rustdesk:// link scheme declared in their manifests still matches;
+    // their visible name comes from the manifest label.
+    #[cfg(not(any(target_os = "macos", target_os = "android", target_os = "ios")))]
     {
         *config::APP_NAME.write().unwrap() = "Soporte SG".to_owned();
     }
