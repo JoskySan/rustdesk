@@ -2515,7 +2515,7 @@ fn apply_soporte_sg_config() {
     // their visible name comes from the manifest label.
     #[cfg(not(any(target_os = "macos", target_os = "android", target_os = "ios")))]
     {
-        *config::APP_NAME.write().unwrap() = "Soporte SG".to_owned();
+        *config::APP_NAME.write().unwrap() = "SoporteSG".to_owned();
     }
     {
         let mut o = config::OVERWRITE_SETTINGS.write().unwrap();
