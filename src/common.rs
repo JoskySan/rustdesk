@@ -2506,7 +2506,59 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+/// Built-in configuration for the "Soporte SG" custom client.
+fn apply_soporte_sg_config() {
+    *config::APP_NAME.write().unwrap() = "Soporte SG".to_owned();
+    {
+        let mut o = config::OVERWRITE_SETTINGS.write().unwrap();
+        o.insert(
+            keys::OPTION_CUSTOM_RENDEZVOUS_SERVER.to_owned(),
+            "rustdesk.samageeks.com".to_owned(),
+        );
+        o.insert(
+            keys::OPTION_KEY.to_owned(),
+            "znuD63AYNWgtE0esoq3XbPIjANQEQ2CYQVJNg37ao0A=".to_owned(),
+        );
+    }
+    {
+        let mut d = config::DEFAULT_SETTINGS.write().unwrap();
+        for k in [
+            keys::OPTION_ENABLE_KEYBOARD,
+            keys::OPTION_ENABLE_CLIPBOARD,
+            keys::OPTION_ENABLE_FILE_TRANSFER,
+            keys::OPTION_ENABLE_CAMERA,
+            keys::OPTION_ENABLE_TERMINAL,
+            keys::OPTION_ENABLE_AUDIO,
+            keys::OPTION_ENABLE_TUNNEL,
+            keys::OPTION_ENABLE_REMOTE_RESTART,
+            keys::OPTION_ENABLE_RECORD_SESSION,
+            keys::OPTION_ENABLE_BLOCK_INPUT,
+            keys::OPTION_ENABLE_PRIVACY_MODE,
+            keys::OPTION_ENABLE_REMOTE_PRINTER,
+            keys::OPTION_ALLOW_REMOTE_CONFIG_MODIFICATION,
+        ] {
+            d.insert(k.to_owned(), "Y".to_owned());
+        }
+        d.insert(
+            keys::OPTION_VERIFICATION_METHOD.to_owned(),
+            "use-permanent-password".to_owned(),
+        );
+        d.insert(keys::OPTION_APPROVE_MODE.to_owned(), "password".to_owned());
+    }
+    // Preset permanent password (plain storage, no salt), injected at build time
+    // from the SOPORTE_SG_PASSWORD secret so it is never stored in the repository.
+    if let Some(password) = option_env!("SOPORTE_SG_PASSWORD") {
+        if !password.is_empty() {
+            config::HARD_SETTINGS
+                .write()
+                .unwrap()
+                .insert("password".to_owned(), password.to_owned());
+        }
+    }
+}
+
 pub fn load_custom_client() {
+    apply_soporte_sg_config();
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
