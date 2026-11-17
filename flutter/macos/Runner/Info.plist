@@ -30,6 +30,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>rustdesk</string>
+				<string>soportesg</string>
 			</array>
 		</dict>
 	</array>
