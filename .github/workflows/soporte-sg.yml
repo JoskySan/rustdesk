@@ -672,6 +672,8 @@ jobs:
           # Ad-hoc signature over the final bundle, so Gatekeeper no longer reports it as "damaged".
           codesign --force --deep -s - --entitlements ./flutter/macos/Runner/Release.entitlements "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
+          # Smoke test: the signed binary must start (an invalid signature gets it killed on launch).
+          "$APP/Contents/MacOS/RustDesk" --version
           create-dmg --volname "Soporte SG" --icon "RustDesk.app" 200 190 --hide-extension "RustDesk.app" --window-size 800 400 --app-drop-link 600 185 rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.dmg "$APP"
 
       - name: Upload unsigned macOS app
