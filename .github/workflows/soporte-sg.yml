@@ -662,7 +662,8 @@ jobs:
           PLIST="$APP/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Soporte SG'" "$PLIST"
           /usr/libexec/PlistBuddy -c "Delete :CFBundleDisplayName" "$PLIST" || true
-          /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Soporte SG'" "$PLIST"
+          # Finder uses the localized name only if this unlocalized value equals the file name.
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string RustDesk" "$PLIST"
           /usr/libexec/PlistBuddy -c "Delete :LSHasLocalizedDisplayName" "$PLIST" || true
           /usr/libexec/PlistBuddy -c "Add :LSHasLocalizedDisplayName bool true" "$PLIST"
           for lang in en es Base; do
