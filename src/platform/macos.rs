@@ -2215,3 +2215,67 @@ mod update_tests {
         std::fs::remove_dir_all(test_dir).unwrap();
     }
 }
+
+/// Soporte SG: when the service is installed, the `--server` process (which owns the tray and
+/// the NSApplication registered for this bundle) is the one macOS hands `rustdesk://` /
+/// `soportesg://` links to. Tao installs no handler for those Apple events, so the link was
+/// dropped and only the main window opened. Forward it to the main window instead (over the
+/// `_url` IPC, or by launching the UI with the link if it is not running).
+pub fn register_url_event_handler() {
+    use objc::declare::ClassDecl;
+    use objc::runtime::{Object, Sel};
+
+    // 'GURL' / 'GURL' / '----'
+    const K_INTERNET_EVENT_CLASS: u32 = 0x4755_524c;
+    const K_AE_GET_URL: u32 = 0x4755_524c;
+    const KEY_DIRECT_OBJECT: u32 = 0x2d2d_2d2d;
+
+    extern "C" fn handle_get_url_event(_this: &Object, _cmd: Sel, event: id, _reply: id) {
+        unsafe {
+            if event == nil {
+                return;
+            }
+            let desc: id = msg_send![event, paramDescriptorForKeyword: KEY_DIRECT_OBJECT];
+            if desc == nil {
+                return;
+            }
+            let s: id = msg_send![desc, stringValue];
+            if s == nil {
+                return;
+            }
+            let ptr: *const std::os::raw::c_char = msg_send![s, UTF8String];
+            if ptr.is_null() {
+                return;
+            }
+            let url = std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned();
+            // The UI only parses links that start with its own prefix ("rustdesk://" on macOS).
+            let prefix = crate::get_uri_prefix();
+            let url = match url.find("://") {
+                Some(i) if !url.starts_with(&prefix) => format!("{}{}", prefix, &url[i + 3..]),
+                _ => url,
+            };
+            log::info!("URL received by the service process: {}", url);
+            std::thread::spawn(move || crate::handle_url_scheme(url));
+        }
+    }
+
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| unsafe {
+        let Some(mut decl) = ClassDecl::new("SoporteSGUrlEventHandler", class!(NSObject)) else {
+            log::error!("Failed to declare the URL event handler class");
+            return;
+        };
+        decl.add_method(
+            sel!(handleEvent:withReplyEvent:),
+            handle_get_url_event as extern "C" fn(&Object, Sel, id, id),
+        );
+        let cls = decl.register();
+        let handler: id = msg_send![cls, new];
+        let manager: id = msg_send![class!(NSAppleEventManager), sharedAppleEventManager];
+        let _: () = msg_send![manager,
+            setEventHandler: handler
+            andSelector: sel!(handleEvent:withReplyEvent:)
+            forEventClass: K_INTERNET_EVENT_CLASS
+            andEventID: K_AE_GET_URL];
+    });
+}

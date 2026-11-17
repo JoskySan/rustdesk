@@ -146,6 +146,9 @@ fn make_tray() -> hbb_common::ResultType<()> {
         );
 
         if let tao::event::Event::NewEvents(tao::event::StartCause::Init) = event {
+            // Soporte SG: links clicked while the service runs arrive at this process.
+            #[cfg(target_os = "macos")]
+            crate::platform::macos::register_url_event_handler();
             // for fixing https://github.com/rustdesk/rustdesk/discussions/10210#discussioncomment-14600745
             // so we start tray, but not to show it
             if crate::ui_interface::get_builtin_option(keys::OPTION_HIDE_TRAY) == "Y" {
